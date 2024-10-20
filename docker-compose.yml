@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  xp-app:
+    build:
+      args:
+        user: dmatseku
+        uid: 1000
+      context: ./
+      dockerfile: Docker/Dockerfile
+    image: xp
+    container_name: xp-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./:/var/www/html
+      - ./Docker/apache.conf:/etc/apache2/sites-available/000-default.conf
+    ports:
+      - "80:80"
+    networks:
+      - xp-test
+  db:
+    image: postgres:latest
+    container_name: xp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - "5432:5432"
+    networks:
+      - xp-test
+  pgadmin:
+    container_name: xp-pgadmin
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mail.com
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8888:80"
+    networks:
+      - xp-test
+    restart: unless-stopped
+
+networks:
+  xp-test:
+    driver: bridge
